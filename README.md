@@ -60,6 +60,12 @@ Para elegir otro archivo o modo, usa **Ctrl + Shift + P → `Tasks: Run Task`**
 - **El 05 se suelta**: el robot empieza a moverse y la tarea termina enseguida.
   Para detenerlo, pulsa el **botón central** del hub. Para volver a subir un
   cambio, pulsa otra vez la tarea.
+- **Para ver la consola** (los `print()` del hub, como el panel de salida de
+  Pybricks Code), usa la tarea **▶ Ejecutar y ver mensajes (no soltar)**.
+  Se queda conectado y muestra el texto en vivo. Es solo texto: el panel
+  gráfico de sensores y motores sigue siendo el de Pybricks Code. Mientras
+  muestra mensajes, no desconectes el cable USB: se corta la sesión. Para que
+  el robot corra libre, usa **▶ Ejecutar y soltar el robot**.
 - **USB o Bluetooth es automático.** Si el hub no aparece por USB, se intenta
   por Bluetooth. Asegúrate de **cerrar Pybricks Code** antes: el hub solo
   admite una conexión a la vez.
