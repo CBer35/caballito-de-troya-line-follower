@@ -48,20 +48,24 @@ WHITE = 98.4
 LOOP_MS = 10
 TARGET_N = 50.0
 LADO = 1
-DEADBAND = 10.0
+DEADBAND = 12.0
 FILTRO = 0.6
 TURN_MAX = 250.0
-TURN_SLEW = 18
+TURN_SLEW = 15
 SPEED_REDUCTION = 0.5
-MIN_SPEED = 45
+MIN_SPEED = 40
 NEGRO_MAX = 35.0
 BLANCO_MIN = 65.0
+
+# Freno sobre blanco (mismo criterio que 05)
+FRENO_GRIS = 0.60
+FRENO_BLANCO = 0.35
+MIN_SPEED_BLANCO = 25
 
 # --- Perdida, busqueda y recuperacion ---
 WHITE_LOST = 88.0
 LOST_GRACE_MS = 800
 SEARCH_TURN = 90
-SEARCH_SWEEP_MS = 900
 SEARCH_TIMEOUT_MS = 4000
 RECOVER_SPEED = 55
 RECOVER_TURN = 90
@@ -166,7 +170,6 @@ def probar_perfil(indice):
     perdidas = 0
 
     search_ms = 0
-    search_phase = 0
     search_dir = 1
     recuperar_ms = 0
 
@@ -211,7 +214,6 @@ def probar_perfil(indice):
 
                 estado = "BUSCAR"
                 search_ms = 0
-                search_phase = 0
                 if last_turn > 0:
                     search_dir = 1
                 elif last_turn < 0:
@@ -254,6 +256,16 @@ def probar_perfil(indice):
 
                 velocidad = velocidad_base - abs(turn) * SPEED_REDUCTION
                 velocidad = limitar(velocidad, MIN_SPEED, velocidad_base)
+
+                # Freno sobre blanco: evita que se escape al perder el borde
+                if n > BLANCO_MIN:
+                    if n > WHITE_LOST:
+                        velocidad *= FRENO_BLANCO
+                    else:
+                        velocidad *= FRENO_GRIS
+                    if velocidad < MIN_SPEED_BLANCO:
+                        velocidad = MIN_SPEED_BLANCO
+
                 robot.drive(velocidad, turn)
 
         elif estado == "BUSCAR":
@@ -264,11 +276,6 @@ def probar_perfil(indice):
                 perdida = True
                 print("LINEA PERDIDA. Prueba terminada.")
                 break
-
-            fase = search_ms // SEARCH_SWEEP_MS
-            if fase != search_phase:
-                search_phase = fase
-                search_dir = -search_dir
 
             turn = search_dir * SEARCH_TURN
             last_turn = turn

@@ -25,11 +25,13 @@
 #    corrige. Asi no reacciona a cada pequena variacion.
 # 4. Giro limitado por velocidad de cambio (slew rate): el volante
 #    no puede pasar de un extremo al otro de golpe.
-# 5. Estados:
+# 5. Freno sobre blanco: si ve blanco, baja la velocidad para no
+#    escaparse mientras corrige.
+# 6. Estados:
 #       NORMAL    -> sigue el borde con PD suave
-#       BUSCAR    -> se perdio: gira en el sitio barriendo
+#       BUSCAR    -> se perdio: gira en el sitio hasta reencontrarla
 #       RECUPERAR -> encontro la linea: vuelve despacio al borde
-# 6. Si se pierde demasiadas veces seguidas, se detiene y avisa.
+# 7. Si se pierde demasiadas veces seguidas, se detiene y avisa.
 #
 # BOTONES:
 # DERECHA: iniciar
@@ -59,17 +61,17 @@ sensor = ColorSensor(Port.A)
 BLACK = 17.3
 WHITE = 98.4
 
-# Control
-BASE_SPEED = 100       # mm/s (empezar lento; subir solo si sigue bien)
-KP = 1.5               # ganancia proporcional (suave)
-KD = 0.15              # amortiguacion
+# Control (valores conservadores para que no se descontrole)
+BASE_SPEED = 90        # mm/s (empezar lento; subir solo si sigue bien)
+KP = 1.2               # ganancia proporcional (suave)
+KD = 0.10              # amortiguacion
 TARGET_N = 50.0        # 50 = transicion negro/blanco
 LADO = 1               # 1 = borde izquierdo, -1 = borde derecho
 TURN_MAX = 250         # limite de giro, deg/s
-TURN_SLEW = 18         # cambio maximo de giro por ciclo (deg/s)
+TURN_SLEW = 15         # cambio maximo de giro por ciclo (deg/s)
 SPEED_REDUCTION = 0.5  # cuanto baja la velocidad al girar
-MIN_SPEED = 45         # velocidad minima en curvas, mm/s
-DEADBAND = 10.0        # banda muerta: no corrige cerca del borde
+MIN_SPEED = 40         # velocidad minima en curvas, mm/s
+DEADBAND = 12.0        # banda muerta: no corrige cerca del borde
 FILTRO = 0.6           # peso de la lectura nueva (0..1)
 LOOP_MS = 10
 
@@ -77,14 +79,19 @@ LOOP_MS = 10
 NEGRO_MAX = 35.0
 BLANCO_MIN = 65.0
 
+# Freno sobre blanco: si el sensor ve blanco, baja la velocidad para que
+# no se escape mientras corrige y pueda reencontrar el borde.
+FRENO_GRIS = 0.60      # factor entre BLANCO_MIN y WHITE_LOST
+FRENO_BLANCO = 0.35    # factor casi en blanco
+MIN_SPEED_BLANCO = 25  # suelo de velocidad al frenar
+
 # Deteccion de perdida
 WHITE_LOST = 88.0      # casi blanco = posible perdida
 LOST_GRACE_MS = 800    # tiempo que sigue corrigiendo antes de buscar
 
-# Busqueda girando en el sitio
+# Busqueda girando en el sitio hasta reencontrar la linea
 SEARCH_TURN = 90       # deg/s
-SEARCH_SWEEP_MS = 900  # tiempo de giro en cada direccion
-SEARCH_TIMEOUT_MS = 4000
+SEARCH_TIMEOUT_MS = 4000  # a 90 deg/s, una vuelta completa son 4 s
 
 # Recuperacion despues de encontrar la linea
 RECOVER_SPEED = 55     # mm/s
@@ -151,7 +158,6 @@ def seguir_linea():
     perdidas = 0
 
     search_ms = 0
-    search_phase = 0
     search_dir = 1
 
     recuperar_ms = 0
@@ -193,7 +199,6 @@ def seguir_linea():
 
                 estado = "BUSCAR"
                 search_ms = 0
-                search_phase = 0
                 normal_ms = 0
                 if last_turn > 0:
                     search_dir = 1
@@ -220,19 +225,24 @@ def seguir_linea():
 
                 velocidad = BASE_SPEED - abs(turn) * SPEED_REDUCTION
                 velocidad = limitar(velocidad, MIN_SPEED, BASE_SPEED)
+
+                # Freno sobre blanco: evita que se escape al perder el borde
+                if n > BLANCO_MIN:
+                    if n > WHITE_LOST:
+                        velocidad *= FRENO_BLANCO
+                    else:
+                        velocidad *= FRENO_GRIS
+                    if velocidad < MIN_SPEED_BLANCO:
+                        velocidad = MIN_SPEED_BLANCO
+
                 robot.drive(velocidad, turn)
 
         elif estado == "BUSCAR":
-            # --- Gira en el sitio barriendo a izquierda/derecha ---
+            # --- Gira en el sitio hasta reencontrar la linea ---
             search_ms += LOOP_MS
             if search_ms > SEARCH_TIMEOUT_MS:
                 robot.stop()
                 return "perdido"
-
-            fase = search_ms // SEARCH_SWEEP_MS
-            if fase != search_phase:
-                search_phase = fase
-                search_dir = -search_dir
 
             turn = search_dir * SEARCH_TURN
             last_turn = turn
@@ -301,6 +311,7 @@ print("Negro=%.1f Blanco=%.1f | TARGET=%.1f | LADO=%d" %
 print("Velocidad=%d mm/s | KP=%.2f | KD=%.2f | Banda=%.1f" %
       (BASE_SPEED, KP, KD, DEADBAND))
 print("Gracia=%d ms | Busqueda=%d ms" % (LOST_GRACE_MS, SEARCH_TIMEOUT_MS))
+print("Si el robot gira ALEJANDOSE de la linea, cambia LADO a -1.")
 
 while True:
     robot.stop()
