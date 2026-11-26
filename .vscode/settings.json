@@ -1,0 +1,5 @@
+{
+  "python.analysis.stubPath": "./typings",
+  "python.analysis.extraPaths": ["./typings"],
+  "editor.rulers": [79]
+}

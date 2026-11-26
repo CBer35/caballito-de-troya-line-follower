@@ -1,0 +1,271 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "▶ Ejecutar en el hub (archivo abierto)",
+      "detail": "Compila y sube el archivo que tienes abierto. USB si el hub está conectado; si no, Bluetooth.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${file}"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": true,
+        "echo": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "▶ Ejecutar y ver mensajes (no soltar)",
+      "detail": "Sube el archivo y se queda conectado para mostrar sus print(). Útil para 05 y main.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${file}",
+        "-Modo", "esperar"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": true,
+        "echo": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "▶ Ejecutar y soltar el robot",
+      "detail": "Sube el archivo, arranca el programa y se desconecta. El robot queda andando.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${file}",
+        "-Modo", "soltar"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": true,
+        "echo": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔵 Ejecutar por Bluetooth",
+      "detail": "Fuerza la conexión Bluetooth (aunque el cable USB esté puesto).",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${file}",
+        "-Conexion", "ble"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": true,
+        "echo": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "✅ Revisar sintaxis (sin hub)",
+      "detail": "Compila el archivo abierto con el compilador de Pybricks. No necesita el hub.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${file}",
+        "-SoloCompilar"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": true,
+        "echo": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔌 Estado del hub y la conexión",
+      "detail": "Muestra pybricksdev, dispositivos LEGO por USB, puertos COM y Bluetooth.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/estado_hub.ps1"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": true,
+        "echo": false
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "1 sensor · 01 Test del sensor",
+      "detail": "Muestra en pantalla y en la terminal lo que ve el sensor A.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_1_sensor/01_test_sensor.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "1 sensor · 02 Calibración",
+      "detail": "Mide negro y blanco y guarda la calibración en el hub.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_1_sensor/02_calibracion.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "1 sensor · 03 Motores y giro",
+      "detail": "Comprueba motores, recta y giros de 90°.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_1_sensor/03_test_motores_y_giro.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "1 sensor · 04 Prueba de control",
+      "detail": "Prueba los perfiles de velocidad y muestra estadísticas.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_1_sensor/04_prueba_control.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "1 sensor · 05 Seguidor final",
+      "detail": "Sube y arranca el seguidor de un sensor (se suelta y el robot anda).",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_1_sensor/05_seguidor_linea.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "2 sensores · 01 Test de sensores",
+      "detail": "Muestra A y E en pantalla y en la terminal.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_pybricks/01_test_sensores.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "2 sensores · 02 Calibración",
+      "detail": "Calibración en 3 pasos y guardado en el hub.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_pybricks/02_calibracion.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "2 sensores · 03 Motores y giro",
+      "detail": "Comprueba motores, recta y giros de 90°.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_pybricks/03_test_motores_y_giro.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "2 sensores · 04 Prueba de control",
+      "detail": "Prueba los perfiles de velocidad y muestra estadísticas.",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_pybricks/04_prueba_control.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "2 sensores · 05 Seguidor final",
+      "detail": "Sube y arranca el seguidor de dos sensores (se suelta y el robot anda).",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/tools/ejecutar.ps1",
+        "-Ruta", "${workspaceFolder}/seguidor_linea_pybricks/05_seguidor_linea.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true, "focus": true, "echo": false },
+      "problemMatcher": []
+    }
+  ]
+}

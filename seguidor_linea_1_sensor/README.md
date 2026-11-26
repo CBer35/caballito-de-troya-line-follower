@@ -14,7 +14,7 @@ Carpeta alternativa al seguidor de dos sensores. Aquí se usa **un solo sensor d
 | `04_prueba_control.py` | Prueba 4 perfiles de velocidad/KP/KD con estadísticas. |
 | `05_seguidor_linea.py` | Programa final. |
 
-Cada archivo es independiente: puedes pegar el que quieras en **Pybricks Code**.
+Cada archivo es independiente: puedes ejecutarlo desde **VS Code** con `Ctrl+Shift+B` o pegarlo en **Pybricks Code**.
 
 ---
 
@@ -292,22 +292,42 @@ A= 90 n= 89 | err=  39 turn=  47 | NORMAL
 
 ## 10. Cómo ejecutar
 
-### Opción A — Pybricks Code (recomendado)
+### Opción A — Visual Studio Code (recomendado)
+
+El repositorio ya trae tareas listas en `.vscode/`:
+
+1. Abre VS Code en la carpeta del proyecto.
+2. Abre el script que quieras ejecutar.
+3. Pulsa **Ctrl + Shift + B** para subir el archivo abierto al hub.
+
+También puedes usar **Ctrl + Shift + P → `Tasks: Run Task`** y elegir, por
+ejemplo, `1 sensor · 02 Calibración`. Sigue el orden `01 → 02 → 03 → 04 → 05`.
+
+Los tests muestran sus mensajes en la terminal de VS Code. El `05` se suelta
+para que el robot arranque; se detiene con el **botón central** del hub.
+Ver el [README principal](../README.md#-cómo-ejecutar-el-programa) para el
+detalle de cada tarea y la solución de problemas de conexión.
+
+### Opción B — Pybricks Code
 
 1. Abre [code.pybricks.com](https://code.pybricks.com/).
 2. Conecta el hub por USB o Bluetooth.
 3. Pega el contenido de un programa y pulsa ▶️.
 4. Sigue el orden `01 → 02 → 03 → 04 → 05`.
 
-### Opción B — `pybricksdev`
+### Opción C — `pybricksdev` desde la terminal
 
 ```powershell
-pybricksdev run ble -n jgLegoHUB1 01_test_sensor.py
-pybricksdev run ble -n jgLegoHUB1 02_calibracion.py
-pybricksdev run ble -n jgLegoHUB1 03_test_motores_y_giro.py
-pybricksdev run ble -n jgLegoHUB1 04_prueba_control.py
-pybricksdev run ble -n jgLegoHUB1 05_seguidor_linea.py
+# desde la carpeta raíz del repositorio
+pybricksdev run usb seguidor_linea_1_sensor\01_test_sensor.py
+pybricksdev run usb seguidor_linea_1_sensor\02_calibracion.py
+pybricksdev run usb seguidor_linea_1_sensor\03_test_motores_y_giro.py
+pybricksdev run usb seguidor_linea_1_sensor\04_prueba_control.py
+pybricksdev run usb seguidor_linea_1_sensor\05_seguidor_linea.py
 ```
+
+Sin `-n`, busca el primer hub con Pybricks. También sirve `run ble`. Añade
+`--no-wait` para soltar el robot y que el comando termine enseguida.
 
 ---
 

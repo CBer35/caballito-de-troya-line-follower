@@ -26,16 +26,81 @@ Cada carpeta tiene su propio `README.md` con el orden de ejecución, la calibrac
 
 ### 🚀 Cómo Ejecutar el Programa
 
-#### Opción 1: Desde Pybricks Code (Navegador Chrome / Edge / Brave)
+#### Opción 1 (recomendada): desde Visual Studio Code
+
+El proyecto ya trae todo configurado en `.vscode/` para compilar y subir el
+código al hub **sin abrir el navegador**:
+
+1. Abre VS Code en esta carpeta: **Archivo → Abrir carpeta…**.
+2. Abre el archivo que quieras ejecutar (por ejemplo
+   `seguidor_linea_1_sensor/05_seguidor_linea.py`).
+3. Pulsa **Ctrl + Shift + B**.
+   Eso compila y sube **el archivo que tengas abierto** al hub.
+
+Para elegir otro archivo o modo, usa **Ctrl + Shift + P → `Tasks: Run Task`**
+(o *Terminal → Ejecutar tarea…*). Estas son las tareas disponibles:
+
+| Tarea | Qué hace |
+| :--- | :--- |
+| ▶ **Ejecutar en el hub (archivo abierto)** | Compila y sube el archivo abierto. Usa USB si el hub está conectado; si no, Bluetooth. |
+| ▶ **Ejecutar y ver mensajes (no soltar)** | Igual, pero se queda conectado para mostrar los `print()` en la terminal de VS Code. |
+| ▶ **Ejecutar y soltar el robot** | Sube, arranca y se desconecta. El robot queda andando. |
+| 🔵 **Ejecutar por Bluetooth** | Fuerza Bluetooth aunque el cable esté puesto. |
+| ✅ **Revisar sintaxis (sin hub)** | Compila el archivo abierto sin necesidad de hub. |
+| 🔌 **Estado del hub y la conexión** | Muestra `pybricksdev`, dispositivos LEGO por USB, puertos COM y Bluetooth. |
+| **1 sensor · 01…05** | Ejecuta directamente cada script de `seguidor_linea_1_sensor/`. |
+| **2 sensores · 01…05** | Ejecuta directamente cada script de `seguidor_linea_pybricks/`. |
+
+**Cosas importantes:**
+
+- **El archivo se guarda solo** antes de ejecutar la tarea (VS Code lo hace
+  por defecto), así que no hace falta guardar a mano.
+- **Los tests 01–04 esperan** y muestran sus mensajes en la terminal. Los
+  sensores se pueden leer ahí mismo, sin abrir Pybricks Code.
+- **El 05 se suelta**: el robot empieza a moverse y la tarea termina enseguida.
+  Para detenerlo, pulsa el **botón central** del hub. Para volver a subir un
+  cambio, pulsa otra vez la tarea.
+- **USB o Bluetooth es automático.** Si el hub no aparece por USB, se intenta
+  por Bluetooth. Asegúrate de **cerrar Pybricks Code** antes: el hub solo
+  admite una conexión a la vez.
+- La extensión de Pybricks para VS Code **no se usa** en este flujo. Si te
+  sigue pidiendo seleccionar el hub, puedes desinstalarla o deshabilitarla.
+
+La primera vez, comprueba que `pybricksdev` está instalado:
+
+```powershell
+pybricksdev --version
+# si no existe:
+uv tool install pybricksdev
+```
+
+También puedes ejecutar los scripts a mano desde una terminal normal:
+
+```powershell
+# USB
+pybricksdev run usb seguidor_linea_1_sensor\05_seguidor_linea.py
+
+# Bluetooth (busca cualquier hub con Pybricks)
+pybricksdev run ble seguidor_linea_1_sensor\05_seguidor_linea.py
+
+# Solo revisar sintaxis
+pybricksdev compile seguidor_linea_1_sensor\05_seguidor_linea.py
+```
+
+> **Carpetas de apoyo:** `tools/` contiene el script que usan las tareas
+> (`ejecutar.ps1`) y el diagnóstico de conexión (`estado_hub.ps1`).
+> `typings/` contiene los tipos de Pybricks para que VS Code muestre
+> autocompletado y no marque `import pybricks` como error.
+
+#### Opción 2: desde Pybricks Code (Navegador Chrome / Edge / Brave)
+
 1. Abre [code.pybricks.com](https://code.pybricks.com/).
-2. Conecta tu Spike Prime mediante el cable USB (seleccionando el puerto serie/COM de tu hub `jgLegoHUB1`) o vía Bluetooth.
-3. Abre o pega el contenido del archivo [`main.py`](./main.py).
+2. Conecta tu Spike Prime mediante el cable USB o vía Bluetooth.
+3. Abre o pega el contenido del archivo que quieras ejecutar.
 4. Haz clic en el botón de descarga/ejecución (botón ▶️ Play).
 
-#### Opción 2: Usando `pybricksdev` desde la terminal
-```powershell
-pybricksdev run ble -n jgLegoHUB1 main.py
-```
+Úsalo sobre todo para **ver el estado de sensores y motores** con su interfaz
+gráfica, o si no tienes VS Code a mano.
 
 ---
 
