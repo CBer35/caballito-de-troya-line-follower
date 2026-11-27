@@ -2,6 +2,18 @@
 
 Carpeta alternativa al seguidor de dos sensores. Aquí se usa **un solo sensor de color, el A**, montado **centrado en el robot**, mirando la línea.
 
+### Novedades del `05` (sin tocar la precisión)
+
+- **El control NORMAL es el mismo de antes:** 90 mm/s, KP 1.2, KD 0.10, banda 12. En recta y curvas la velocidad y la precisión no cambian.
+- **Línea discontinua:** al confirmar blanco, el robot **avanza 45 mm recto** (`SALTO_MM`). Si la línea reaparece, sigue. Si no, **retrocede hasta 50 mm** (`RETRO_MM`) para volver a la línea anterior y **reintenta con un avance más largo** (+20 mm por intento, hasta 90 mm). Solo si aun así no aparece, busca 180° (90 a cada lado), no 360.
+- **Esquinas de 90°:** la búsqueda usa el **giro que traía el robot antes del blanco**. Si venía girando a la izquierda, busca a la izquierda; si venía a la derecha, busca a la derecha. Antes el PD giraba a la derecha durante la espera y por eso **siempre buscaba a la derecha**.
+- **Búsqueda sin parar:** si no la encuentra en los 180°, vuelve al rumbo previo, avanza 120 mm y repite el barrido; sigue así hasta encontrarla, sin detenerse ni mostrar `E` (`SEARCH_MAX_MS = 0`).
+- Pantalla nueva: `>` cuando avanza en el hueco y `<` cuando retrocede.
+
+> El avance/retroceso solo se activa si el robot venía **cerca del borde y sin girar fuerte**; en una curva no se activa. Los reintentos ya alargan el salto solos; si tus huecos superan los 90 mm, sube `SALTO_MAX_MM` o `SALTO_MM`.
+
+> En una **colina muy cerrada** puede aparecer un `!` corto: el robot barre 90° a cada lado y retoma la línea, no da la vuelta completa. Si se queda buscando, baja `BASE_SPEED` a 80 o sube un poco `LOST_GRACE_MS`.
+
 ---
 
 ## 1. Qué hay en esta carpeta
@@ -12,7 +24,7 @@ Carpeta alternativa al seguidor de dos sensores. Aquí se usa **un solo sensor d
 | `02_calibracion.py` | Calibración en 2 pasos (negro y blanco) y guardado en el hub. |
 | `03_test_motores_y_giro.py` | Prueba motores, recta, giros de 90° y fuerza de giro real con el IMU. |
 | `04_prueba_control.py` | Prueba 4 perfiles de velocidad/KP/KD con estadísticas. |
-| `05_seguidor_linea.py` | Programa final. |
+| `05_seguidor_linea.py` | Programa final: mismo control de antes + avance/retroceso en huecos y búsqueda con dirección correcta. |
 
 Cada archivo es independiente: puedes ejecutarlo desde **VS Code** con `Ctrl+Shift+B` o pegarlo en **Pybricks Code**.
 
@@ -64,7 +76,7 @@ Con `LADO = 1` sigue el borde **izquierdo**; con `LADO = -1`, el **derecho**. El
 
 ## 4. Estrategia del programa final
 
-El control tiene **tres estados** y varias protecciones para que no se ponga a dar vueltas:
+El control base es **el mismo de antes**. Se agregaron dos estados para los huecos y se corrigió la dirección de la búsqueda:
 
 1. **NORMAL** — sigue el borde con un PD suave:
    - filtra la lectura (`FILTRO`) para quitar ruido;
@@ -74,9 +86,29 @@ El control tiene **tres estados** y varias protecciones para que no se ponga a d
    - **límite de cambio de giro** (`TURN_SLEW`): el giro no cambia de golpe;
    - **freno sobre blanco** (`FRENO_GRIS`, `FRENO_BLANCO`): al ver blanco baja la velocidad para no escaparse mientras corrige;
    - `turn = LADO * (KP * error + KD * derivada_filtrada)`.
-2. **BUSCAR** — si la lectura se queda casi blanca (`n > WHITE_LOST`) durante `LOST_GRACE_MS`, deja de avanzar y **gira en el sitio** en el sentido de la última corrección (`SEARCH_TURN`) hasta reencontrar la línea. Si da una vuelta completa (`SEARCH_TIMEOUT_MS`) sin verla, se detiene.
-3. **RECUPERAR** — cuando vuelve a ver negro, avanza despacio y gira hacia el borde elegido (`-LADO * RECOVER_TURN`) hasta llegar a la transición. Así no se queda del lado equivocado.
-4. **Seguridad** — si se pierde más de `MAX_PERDIDAS` veces seguidas, se detiene y muestra `E` en vez de girar indefinidamente.
+
+2. **SALTAR** — hueco corto:
+   - se activa cuando hay `GAP_CONFIRM_MS` de blanco, el robot venía **cerca del borde** (`cerca_ms`) y **no venía girando fuerte** (`turn_medio <= GAP_TURN_MAX`);
+   - avanza `SALTO_MM` (45 mm) recto a `SALTO_SPEED`, enderezando el giro;
+   - si la línea reaparece, vuelve a `NORMAL` sin detenerse;
+   - **no se activa en curvas**, justamente porque en una curva el giro medio es alto.
+
+3. **RETROCESO** — si el hueco es más largo que el avance:
+   - retrocede hasta `RETRO_MM` (50 mm) a `RETRO_SPEED`, mirando si encuentra la línea;
+   - si la encuentra, vuelve a `NORMAL` y espera 1.5 s antes de volver a saltar (para no quedar en un bucle);
+   - si no la encuentra, pasa a `BUSCAR`.
+
+4. **BUSCAR** — búsqueda de **180° continua**, no 360 y sin detenerse:
+   - si el blanco sigue después de `LOST_GRACE_MS`, o si falló el retroceso, **gira en el sitio**;
+   - el barrido es de **90° a cada lado del rumbo que traía antes del blanco**, no una vuelta completa;
+   - la dirección inicial sale del **giro con signo previo** (`giro_onset`): si venía girando a la izquierda, empieza a la izquierda; si a la derecha, a la derecha; si iba recto, hacia `LADO`;
+   - si no la ve en los dos lados, **vuelve a ese rumbo, avanza `SEARCH_AVANCE_MM` (120 mm) a `SEARCH_AVANCE_SPEED` y repite el barrido**, alternando el lado inicial;
+   - repite ese ciclo **sin parar** hasta que vuelve a ver la línea (`SEARCH_MAX_MS = 0`); no muestra `E` ni termina la ejecución;
+   - antes buscaba 360° y la dirección salía de `last_turn` al final de la espera; como el PD giraba a la derecha durante esos 800 ms, **siempre terminaba buscando a la derecha** y se volvía por donde vino.
+
+5. **RECUPERAR** — cuando vuelve a ver negro, avanza despacio y gira hacia el borde elegido (`-LADO * RECOVER_TURN`) hasta llegar a la transición. Así no se queda del lado equivocado.
+
+6. **Seguridad** — si se pierde más de `MAX_PERDIDAS` veces seguidas, se detiene y muestra `E` en vez de girar indefinidamente.
 
 **Por qué antes daba vueltas:** con el sensor sobre el negro (centro de la línea), el error se saturaba en −50 y el control antiguo (`KP=2.5`, sin banda muerta ni filtro) ordenaba un giro fuerte constante. El robot se ponía a **orbitar sobre la propia línea** sin llegar nunca al borde: eso eran las “vueltas sin sentido”. Además, la transición negro/blanco es muy brusca (pasa de ~50 a ~80 en pocos milímetros), así que cualquier ganancia alta hacía que se pasara al otro lado. El filtro, la banda muerta, el límite de giro, el freno sobre blanco y la recuperación rompen ese ciclo.
 
@@ -86,6 +118,19 @@ La derivada se filtra para que un salto brusco de lectura no produzca un giro vi
 deriv = error - error_anterior
 deriv_f = 0.6 * deriv_f + 0.4 * deriv
 turn = LADO * (KP * error + KD * deriv_f)
+```
+
+La dirección de búsqueda se guarda al entrar al blanco:
+
+```python
+if n < BLANCO_MIN:
+    giro_previo = 0.9 * giro_previo + 0.1 * last_turn
+# al entrar al blanco:
+giro_onset = giro_previo
+# al buscar:
+if giro_onset < -CORNER_TURN_MIN:   search_dir = -1   # izquierda
+elif giro_onset > CORNER_TURN_MIN:  search_dir = 1    # derecha
+else:                               search_dir = LADO
 ```
 
 ---
@@ -222,10 +267,38 @@ Pantalla del hub:
 | `\|` | En el borde (correcto) |
 | `N` | Sobre negro (centro de la línea) |
 | `B` | Sobre blanco (posible pérdida) |
-| `!` | Buscando la línea girando en el sitio |
+| `>` | Hueco: avanzando recto para pasar la línea discontinua |
+| `<` | Hueco largo: retrocediendo para no perder la línea |
+| `!` | Buscando la línea (barre, avanza y repite; no se detiene) |
 | `+` | Recuperando: encontró la línea y vuelve al borde |
 | `S` | Detenido por el usuario |
 | `E` | Línea perdida o control inestable |
+
+**Coloca el sensor justo en el borde de la línea** (no en el centro) y pulsa DERECHA.
+
+#### Prueba de línea discontinua
+
+1. Dibuja tramos de **70 mm de línea y 30 mm de hueco** (o los de tu pista).
+2. El robot debe mostrar `>` al pasar el hueco y volver a `|` sin detenerse.
+3. Si aparece `!` y gira en el hueco:
+   - sube `SALTO_MM` (50–70 mm);
+   - baja `GAP_CONFIRM_MS` (60–80 ms).
+4. Si aparece `<` muchas veces:
+   - el hueco es más largo que `SALTO_MM`; súbelo de a 10 mm;
+   - o sube `RETRO_MM` si retrocede demasiado.
+5. Si en una **curva** aparece `>` o `<`:
+   - baja `GAP_TURN_MAX` (25–30);
+   - sube `GAP_CERCA_MS` (120–150 ms).
+
+#### Prueba de esquinas de 90°
+
+1. Haz una esquina a la **derecha** y otra a la **izquierda**, con el robot siguiendo el mismo borde.
+2. En las dos debe aparecer `!`, girar hacia el lado correcto y luego `+` y `|`.
+3. Si en la esquina **izquierda** gira a la derecha:
+   - baja `CORNER_TURN_MIN` (10–12);
+   - revisa que el robot venga girando antes del blanco (si la esquina es un corte recto, el giro previo puede ser casi cero).
+4. Si en una **curva** busca en vez de seguir:
+   - sube `LOST_GRACE_MS` un poco o baja `GAP_TURN_MAX`; el robot debería seguir la curva sin entrar en `BUSCAR`.
 
 ---
 
@@ -240,7 +313,12 @@ Pantalla del hub:
 | Queda desviado y no encuentra el borde | Ajusta `TARGET_N` (prueba 40–60). |
 | Se detiene y busca en curvas | Sube `KP`, baja la velocidad o sube `LOST_GRACE_MS`. |
 | Se escapa al perder la línea | Baja `LOST_GRACE_MS` (400–600 ms) o baja `FRENO_BLANCO` (0.25) para frenar más sobre blanco. |
-| No encuentra la línea al buscar | Sube `SEARCH_TIMEOUT_MS` o monta el sensor un poco más adelante. |
+| En un hueco aparece `!` y gira | `SALTO_MM` corto o `GAP_CONFIRM_MS` alto: sube `SALTO_MM` (50–60) y baja `GAP_CONFIRM_MS` (60–80). |
+| En un hueco retrocede mucho (`<`) | Los reintentos deberían alargar solos; si no, sube `SALTO_EXTRA_MM` (25–30) o `SALTO_MAX_MM` (100–120). |
+| En una curva se activa `>` o `<` | El salto no debe activarse en curva: baja `GAP_TURN_MAX` (25–30) o sube `GAP_CERCA_MS` (120–150). |
+| En esquina izquierda gira a la derecha | Baja `CORNER_TURN_MIN` (10–12); el robot tiene que venir girando antes del blanco. |
+| En esquina derecha busca a la izquierda | Sube `CORNER_TURN_MIN` (20–25) para no confundir una corrección con una esquina. |
+| No encuentra la línea al buscar | Sube `SEARCH_AVANCE_MM` (150–200) o `SEARCH_TURN` (100–110); revisa `LADO` y el sensor. |
 | Avanza al revés | Invierte `Direction` de los dos motores. |
 | Corrige al revés | Cambia `LADO` o niega `KP`. |
 
@@ -254,12 +332,16 @@ Mientras sigue la línea verás algo como:
 
 ```text
 A= 62 n= 55 | err=   5 turn=   6 | NORMAL
-A= 90 n= 89 | err=  39 turn=  47 | NORMAL
+A=100 n=100 | err=  50 turn=   0 | SALTAR
+A= 70 n= 60 | err=  10 turn=   0 | RETROCESO
+A= 90 n= 89 | err=  39 turn=  47 | BUSCAR
 ```
 
 - Si `n` sube hacia 90–100 y `turn` es **positivo**, el robot gira a la derecha: correcto si sigue el borde izquierdo (`LADO = 1`).
 - Si ves que `turn` empuja **alejándose** de la línea, cambia `LADO` a `-1`.
 - Si aparece muchas veces `BUSCAR`, baja `KP` y `BASE_SPEED`, o sube `DEADBAND`.
+- Si aparece `SALTAR` en una curva, el filtro de giro no lo detectó: baja `GAP_TURN_MAX`.
+- Si en una esquina izquierda el robot busca a la derecha, baja `CORNER_TURN_MIN`.
 
 ---
 
@@ -352,7 +434,7 @@ Sin `-n`, busca el primer hub con Pybricks. También sirve `run ble`. Añade
 2. `02` → calibrar negro/blanco y guardar.
 3. `03` → comprobar motores y fuerza de giro.
 4. `04` → probar perfiles y elegir KP/KD/velocidad.
-5. `05` → ejecutar el seguidor final.
+5. `05` → ejecutar el seguidor final (control de antes + huecos + esquinas).
 
 Si tienes prisa: ejecuta `02` y luego `05`. El `05` viene con valores **conservadores** (90 mm/s, KP 1.2, banda 12) para que no se descontrole.
 
@@ -360,3 +442,8 @@ Si tienes prisa: ejecuta `02` y luego `05`. El `05` viene con valores **conserva
 - Si **zigzaguea**: baja `KP` o sube `DEADBAND`.
 - Si **se sale en curvas**: sube `KP` poco a poco o baja `BASE_SPEED`.
 - Si **se va hacia el lado contrario**: cambia `LADO`.
+- Si **en un hueco aparece `!` y gira**: sube `SALTO_MM` o baja `GAP_CONFIRM_MS`.
+- Si **en un hueco retrocede mucho (`<`)**: sube `SALTO_EXTRA_MM` (25–30) o `SALTO_MAX_MM` (100–120).
+- Si **en una curva aparece `>` o `<`**: baja `GAP_TURN_MAX` o sube `GAP_CERCA_MS`.
+- Si **en una esquina izquierda gira a la derecha**: baja `CORNER_TURN_MIN` (10–12).
+- Si **en una colina se detiene y gira**: baja `BASE_SPEED` un poco (80) o sube `LOST_GRACE_MS` (1000); la búsqueda ya es de 180° y no debería volver por donde vino.
